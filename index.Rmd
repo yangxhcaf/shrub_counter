@@ -1,0 +1,67 @@
+---
+title:
+author: "cjlortie"
+date: "2018"
+output:
+  html_document:
+    theme: flatly
+    toc: no
+    toc_depth: 3
+    toc_float: no
+  pdf_document:
+    toc: no
+---
+###A test of rstats GIS tools to reproducibly count shrubs
+<br>
+
+![](./CNM.png)
+<br>
+
+####Purpose  
+Shrub density and spatial patterning of foundation plant species are important components of the landscape that influence ecological interactions. The purpose of this exercise is to examine the capacity for rapid assessment of shrub density near a spatial point in a landscape associated with ecological effect estimates.
+
+###Case 1. Animal telemetry data
+```{r, telemetry, warning=FALSE, message=FALSE}
+#packages####
+library(tidyverse)
+library(adehabitatHR)
+library(rgeos)
+
+#telemetry data
+data <- read_csv("data/telemetry.relocations.csv")
+data
+track.pop <-data
+track.pop <- track.pop %>% filter(lizard != "x") #were not 5 relocations for x
+coordinates(track.pop) <- ~long+lat
+proj4string(track.pop) <- CRS("+proj=longlat") #assign projection and coordinate reference system
+track.pop <- spTransform(track.pop, CRS("+proj=utm +zone=10")) #transform
+
+#Minimum Convex Polygon####
+#Population
+mcp.pop <- adehabitatHR::mcp(track.pop, percent=95, unin = c("m"), unout = c("km2")) #unout is units out
+mcp.pop
+mcp.ind <- mcp(track.pop[,1], percent=95, unin = c("m"), unout = c("m")) #adding the [,1] tells it the ID and then does individually instead of collectively.
+#mcp.pop <- mcp(track.pop[,1], percent=95, unin = c("km"), unout = c("km")) 
+mcp.ind #total area each lizard occupies
+
+#get centroids
+cent <- rgeos::gCentroid(mcp.ind)
+cent
+
+simple.data <- data %>%
+  group_by(lizard) %>%
+  summarize(x = mean(lat), y = mean(long))
+
+```
+
+###Map
+```{r, map, warning=FALSE, message=FALSE}
+library(raster)
+library(sf)
+coordinates(simple.data) <- ~y+x
+proj4string(simple.data) <- CRS("+proj=longlat") #assign projection and coordinate reference system
+sp.data <- spTransform(simple.data, CRS("+proj=utm +zone=10")) #transform
+#dat_circles <- st_buffer(sp.data, dist = 1)
+
+
+```
