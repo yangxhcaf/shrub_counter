@@ -43,7 +43,7 @@ mcp.pop
 mcp.ind <- mcp(track.pop[,1], percent=95, unin = c("m"), unout = c("m")) #adding the [,1] tells it the ID and then does individually instead of collectively.
 #mcp.pop <- mcp(track.pop[,1], percent=95, unin = c("km"), unout = c("km")) 
 mcp.ind #total area each lizard occupies
-plot(mcp.ind, col= mcp.ind$id)
+#plot(mcp.ind, col= mcp.ind$id)
 
 #get centroids
 cent <- rgeos::gCentroid(mcp.ind)
@@ -57,18 +57,23 @@ simple.data <- data %>%
 
 ###Map
 ```{r, map, warning=FALSE, message=FALSE}
-#static map but with bubbles around each point
-library(raster)
-library(sf)
-coordinates(simple.data) <- ~y+x
-proj4string(simple.data) <- CRS("+proj=longlat") #assign projection and coordinate reference system
-sp.data <- spTransform(simple.data, CRS("+proj=utm +zone=10")) #transform
+
+#Soltion 1. Static maps but with bubbles around each point####
+#used the centroid of each homerange
+
+#library(raster)
+#library(sf)
+#coordinates(simple.data) <- ~y+x
+#proj4string(simple.data) <- CRS("+proj=longlat") #assign projection and coordinate reference system
+#sp.data <- spTransform(simple.data, CRS("+proj=utm +zone=10")) #transform
 #dat_circles <- st_buffer(sp.data, dist = 1)
 
-#interactive map with zoom and ruler
+#Solution 2. Interactive maps with zoom and ruler
 library(leaflet)
 library(leaflet.extras)
 library(ggmap)
+
+#case study using centroids for each lizard home range
 t.class <- colorFactor("Blues", simple.data$lizard, levels = TRUE)
 m <- leaflet() %>%
   addTiles(urlTemplate="http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}") %>%  
@@ -80,12 +85,15 @@ m <- leaflet() %>%
   addMeasure(primaryLengthUnit="meters", secondaryLengthUnit="meters")
 m
 
-ind <- spTransform(mcp.ind, CRS("+init=epsg:4629"))
+#case study using spatial polygons dataframe for the home range for each individual
+ind <- spTransform(mcp.ind, CRS("+init=epsg:4629")) #need to inform leaflet projection
 
 m <- leaflet() %>%
   addTiles(urlTemplate="http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}") %>%  
-  addPolygons(data = ind, stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5) %>%
+  addPolygons(data = ind, stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, popup = ind$id) %>%
   addScaleBar()
 m
+
+#Solution 3. Static map but with automated counts of tagged points in landscape for each shrub that is visible
 
 ```
