@@ -56,6 +56,7 @@ simple.data <- data %>%
 
 ###Map
 ```{r, map, warning=FALSE, message=FALSE}
+#static map but with bubbles around each point
 library(raster)
 library(sf)
 coordinates(simple.data) <- ~y+x
@@ -63,5 +64,14 @@ proj4string(simple.data) <- CRS("+proj=longlat") #assign projection and coordina
 sp.data <- spTransform(simple.data, CRS("+proj=utm +zone=10")) #transform
 #dat_circles <- st_buffer(sp.data, dist = 1)
 
+#interactive map with zoom and ruler
+library(leaflet)
+library(ggmap)
+t.class <- colorFactor("Blues", simple.data$lizard, levels = TRUE)
+m <- leaflet() %>%
+  addTiles(urlTemplate="http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}") %>%  
+  addCircleMarkers(simple.data$y, simple.data$x, radius = 1, popup = simple.data$lizard) %>%
+  addScaleBar()
+m
 
 ```
